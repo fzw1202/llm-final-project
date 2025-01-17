@@ -1,6 +1,7 @@
 import torch
 import random
 
+
 class Sampler:
     def __init__(self, temperature: float, top_p: float, top_k: int):
         self.temperature = temperature
@@ -24,13 +25,17 @@ class Sampler:
         results = []
         adjusted_probs = self.temperatureSampling(logits)
         for batch_idx in range(batch_size):
-            sorted_probs, sorted_indices = torch.sort(adjusted_probs[batch_idx], dim=-1, descending=True)
+            sorted_probs, sorted_indices = torch.sort(
+                adjusted_probs[batch_idx], dim=-1, descending=True
+            )
             cumulative_prob = torch.cumsum(sorted_probs, dim=-1)
             cutoff_index = torch.where(cumulative_prob > self.top_p)[0][0].item() + 1
             filtered_probs = sorted_probs[:cutoff_index]
             filtered_probs /= filtered_probs.sum()
             filtered_probs = filtered_probs.cpu().detach().numpy().flatten()
-            chosen_index = random.choices(range(len(filtered_probs)), weights=filtered_probs, k=1)[0]
+            chosen_index = random.choices(
+                range(len(filtered_probs)), weights=filtered_probs, k=1
+            )[0]
             results.append(sorted_indices[chosen_index].item())
         return results
 
@@ -39,10 +44,14 @@ class Sampler:
         results = []
         adjusted_probs = self.temperatureSampling(logits)
         for batch_idx in range(batch_size):
-            sorted_probs, sorted_indices = torch.sort(adjusted_probs[batch_idx], dim=-1, descending=True)
-            filtered_probs = sorted_probs[:self.top_k]
+            sorted_probs, sorted_indices = torch.sort(
+                adjusted_probs[batch_idx], dim=-1, descending=True
+            )
+            filtered_probs = sorted_probs[: self.top_k]
             filtered_probs /= filtered_probs.sum()
             filtered_probs = filtered_probs.cpu().detach().numpy().flatten()
-            chosen_index = random.choices(range(len(filtered_probs)), weights=filtered_probs.tolist(), k=1)[0]
+            chosen_index = random.choices(
+                range(len(filtered_probs)), weights=filtered_probs.tolist(), k=1
+            )[0]
             results.append(sorted_indices[chosen_index].item())
         return results
